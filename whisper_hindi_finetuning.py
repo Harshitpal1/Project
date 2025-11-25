@@ -28,6 +28,7 @@ import os
 import json
 import requests
 import warnings
+import unicodedata
 from typing import Dict, List, Optional, Any
 from dataclasses import dataclass
 
@@ -236,8 +237,6 @@ def normalize_hindi_text(text: str) -> str:
     Returns:
         Normalized text
     """
-    import unicodedata
-    
     # Unicode normalization (NFC form)
     text = unicodedata.normalize("NFC", text)
     
@@ -553,12 +552,13 @@ def compute_metrics(pred, processor: WhisperProcessor, wer_metric):
 # SECTION 9: FLEURS Evaluation
 # =============================================================================
 
-def load_fleurs_hindi(split: str = "test") -> Dataset:
+def load_fleurs_hindi(split: str = "test", language_code: str = "hi_in") -> Dataset:
     """
     Load Hindi portion of FLEURS dataset.
     
     Args:
         split: Dataset split to load
+        language_code: FLEURS language code (default: hi_in for Hindi)
     
     Returns:
         FLEURS Hindi dataset
@@ -567,7 +567,7 @@ def load_fleurs_hindi(split: str = "test") -> Dataset:
     
     dataset = load_dataset(
         "google/fleurs", 
-        "hi_in",  # Hindi
+        language_code,
         split=split,
         trust_remote_code=True
     )
@@ -757,7 +757,7 @@ def run_complete_pipeline(
     # =========================================================================
     # Step 1: Load FLEURS for evaluation
     # =========================================================================
-    fleurs_test = load_fleurs_hindi("test")
+    fleurs_test = load_fleurs_hindi("test", config.fleurs_language)
     
     # =========================================================================
     # Step 2: Evaluate Pretrained Model on FLEURS
@@ -811,7 +811,7 @@ def run_complete_pipeline(
     
     fleurs_train = load_dataset(
         "google/fleurs", 
-        "hi_in", 
+        config.fleurs_language, 
         split="train",
         trust_remote_code=True
     )
@@ -905,7 +905,7 @@ def evaluate_only(model_path: Optional[str] = None) -> pd.DataFrame:
     results = []
     
     # Load FLEURS
-    fleurs_test = load_fleurs_hindi("test")
+    fleurs_test = load_fleurs_hindi("test", config.fleurs_language)
     
     # Evaluate pretrained
     pretrained_model, processor = load_whisper_model_and_processor(
